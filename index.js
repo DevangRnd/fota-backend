@@ -4,10 +4,10 @@ import multer from "multer"; // Importing multer for handling file uploads
 import Firmware from "./models/FirmwareModel.js"; // Importing the Firmware model
 import Device from "./models/DeviceModel.js"; // Importing the Device model
 import { configDotenv } from "dotenv"; // Importing dotenv for environment variables
-
+import cors from "cors";
 // Initialize Express app
 const app = express();
-
+app.use(cors());
 // Configure multer for file uploads to memory
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
@@ -167,6 +167,16 @@ app.get("/api/check-for-update/:deviceId", async (req, res) => {
     return res.send(firmware.file);
   } else {
     res.json({ updateAvailable: false });
+  }
+});
+// Endpoint to fetch all firmware records
+app.get("/api/firmwares", async (req, res) => {
+  try {
+    const allFirmwares = await Firmware.find({}, "name _id"); // Fetch only necessary fields
+    res.json({ allFirmwares });
+  } catch (error) {
+    console.error("Error retrieving firmwares:", error);
+    res.status(500).json({ error: "Failed to retrieve firmware list" });
   }
 });
 
