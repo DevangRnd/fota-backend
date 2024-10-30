@@ -175,23 +175,19 @@ app.post("/api/update-completed/:deviceId", async (req, res) => {
   const { deviceId } = req.params;
 
   try {
-    // Find and update the device with the given deviceId
-    const device = await Device.findOneAndUpdate(
-      { deviceId },
-      {
-        $set: {
-          pendingUpdate: false,
-          currentFirmware: device.targetFirmwareName,
-          targetFirmwareName: null,
-        },
-      },
-      { new: true } // Return the updated document
-    );
+    // Find the device to retrieve the targetFirmwareName
+    const device = await Device.findOne({ deviceId });
 
-    // If the device is not found, return a 404 error
     if (!device) {
       return res.status(404).json({ error: "Device not found" });
     }
+
+    // Update the device to set currentFirmware and clear the update flags
+    device.currentFirmware = device.targetFirmwareName;
+    device.pendingUpdate = false;
+    device.targetFirmwareName = null;
+
+    await device.save();
 
     res.json({ message: "Update completed successfully", device });
   } catch (error) {
