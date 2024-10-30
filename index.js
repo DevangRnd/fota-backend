@@ -116,7 +116,6 @@ app.get("/api/devices", async (req, res) => {
 app.post("/api/initiate-update", async (req, res) => {
   const { deviceIds, firmwareName } = req.body;
 
-  // Validate request payload
   if (!deviceIds || !firmwareName) {
     return res
       .status(400)
@@ -129,13 +128,12 @@ app.post("/api/initiate-update", async (req, res) => {
     return res.status(404).json({ error: "Firmware not found" });
   }
 
-  // Mark devices for update with the specified firmware
+  // Update devices with the new firmware, overwriting pending updates if they exist
   await Device.updateMany(
     { deviceId: { $in: deviceIds } },
     { $set: { pendingUpdate: true, targetFirmwareName: firmwareName } }
   );
 
-  // Send success response
   res.json({ message: "Update initiated for selected devices" });
 });
 
