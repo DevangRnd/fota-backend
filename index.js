@@ -137,6 +137,7 @@ app.post("/api/initiate-update", async (req, res) => {
   res.json({ message: "Update initiated for selected devices" });
 });
 
+// !For IOT
 //GIven to IOT for checking update
 app.get("/api/check-for-update/:deviceId", async (req, res) => {
   const { deviceId } = req.params;
@@ -167,6 +168,38 @@ app.get("/api/check-for-update/:deviceId", async (req, res) => {
     res.json({ updateAvailable: false });
   }
 });
+
+// !FOR IOT
+// Endpoint to mark an update as completed for a specific device
+app.post("/api/update-completed/:deviceId", async (req, res) => {
+  const { deviceId } = req.params;
+
+  try {
+    // Find and update the device with the given deviceId
+    const device = await Device.findOneAndUpdate(
+      { deviceId },
+      {
+        $set: {
+          pendingUpdate: false,
+          currentFirmware: device.targetFirmwareName,
+          targetFirmwareName: null,
+        },
+      },
+      { new: true } // Return the updated document
+    );
+
+    // If the device is not found, return a 404 error
+    if (!device) {
+      return res.status(404).json({ error: "Device not found" });
+    }
+
+    res.json({ message: "Update completed successfully", device });
+  } catch (error) {
+    console.error("Error marking update as completed:", error);
+    res.status(500).json({ error: "Failed to mark update as completed" });
+  }
+});
+
 // Endpoint to fetch all firmware records
 app.get("/api/firmwares", async (req, res) => {
   try {
