@@ -18,6 +18,22 @@ const DeviceSchema = new mongoose.Schema({
     type: String,
     default: null, // Default to null until set
   },
+  vendor: {
+    type: String,
+    required: true,
+  },
+  district: {
+    type: String,
+    required: true,
+  },
+  block: {
+    type: String,
+    required: true,
+  },
+  panchayat: {
+    type: String,
+    required: true,
+  },
 });
 
 const Device = mongoose.model("Device", DeviceSchema);
