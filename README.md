@@ -2,7 +2,7 @@
 
 # FOTA API Documentation
 
-This API is used for managing devices and firmware in an IoT environment. It allows clients to add devices, fetch device lists, initiate firmware updates, check for available updates, and retrieve firmware records.
+## This API is used for managing devices and firmware in an IoT environment. It allows clients to add devices, fetch device lists, initiate firmware updates, check for available updates, and retrieve firmware records.
 
 ## Base URL
 
