@@ -5,6 +5,7 @@ import Firmware from "./models/FirmwareModel.js"; // Importing the Firmware mode
 import Device from "./models/DeviceModel.js"; // Importing the Device model
 import { configDotenv } from "dotenv"; // Importing dotenv for environment variables
 import cors from "cors";
+import xlsx from "xlsx";
 // Initialize Express app
 const app = express();
 app.use(cors());
@@ -22,83 +23,78 @@ connectToDB();
 app.use(express.json());
 
 // Endpoint for devices to upload firmware
-app.post(
-  "/api/upload-firmware",
-  upload.single("firmware"),
-  async (req, res) => {
-    const { name } = req.body;
-
-    // Validate request payload
-    if (!req.file || !name) {
-      return res
-        .status(400)
-        .json({ error: "Firmware file and name are required" });
-    }
-
-    try {
-      // Create a new firmware document in MongoDB
-      const newFirmware = new Firmware({
-        name,
-        file: req.file.buffer, // Store the binary file data
-      });
-
-      // Save firmware to database
-      await newFirmware.save();
-
-      // Respond with success message and firmware ID
-      res.json({
-        message: "Firmware uploaded successfully",
-        firmwareId: newFirmware._id,
-        name,
-      });
-    } catch (error) {
-      console.error("Error saving firmware:", error);
-      res.status(500).json({ error: "Failed to upload firmware" });
-    }
-  }
-);
-
-// Endpoint to add one or multiple devices
-app.post("/api/add-device", async (req, res) => {
-  const { deviceId } = req.body;
-
-  // Ensure the deviceId field is provided
-  if (!deviceId) {
-    return res.status(400).json({ error: "Device ID(s) are required" });
+app.post("/api/add-device", upload.single("file"), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: "File is required" });
   }
 
-  // Normalize input to always be an array
-  const deviceIds = Array.isArray(deviceId) ? deviceId : [deviceId];
+  let rows;
+  const fileExtension = req.file.originalname.split(".").pop().toLowerCase();
 
-  // Prepare an array to store any errors
+  try {
+    const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
+    // If the file is CSV, read it differently
+    if (fileExtension === "csv") {
+      rows = xlsx.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {
+        raw: true,
+      });
+    } else {
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      rows = xlsx.utils.sheet_to_json(sheet);
+    }
+  } catch (error) {
+    return res.status(400).json({
+      error:
+        "Failed to parse the file. Please upload a valid Excel or CSV file.",
+    });
+  }
+
   const errors = [];
+  const addedDevices = [];
 
-  // Iterate through device IDs to add them
-  for (const id of deviceIds) {
-    // Check if the device already exists
-    const existingDevice = await Device.findOne({ deviceId: id });
-    if (existingDevice) {
-      errors.push(`Device ${id} already exists`);
-      continue; // Skip to the next ID
+  for (const row of rows) {
+    const { DeviceId, Vendor, District, Block, Panchayat } = row;
+
+    if (!DeviceId || !Vendor || !District || !Block || !Panchayat) {
+      errors.push(
+        `Missing required fields for device ${DeviceId || "unknown"}`,
+      );
+      continue;
     }
 
-    // Create a new device document
-    const newDevice = new Device({ deviceId: id });
+    const existingDevice = await Device.findOne({ deviceId: DeviceId });
+    if (existingDevice) {
+      errors.push(`Device ${DeviceId} already exists`);
+      continue;
+    }
+
+    const newDevice = new Device({
+      deviceId: DeviceId,
+      vendor: Vendor,
+      district: District,
+      block: Block,
+      panchayat: Panchayat,
+    });
+
     try {
-      await newDevice.save(); // Save the device to the database
+      await newDevice.save();
+      addedDevices.push(DeviceId);
     } catch (error) {
-      errors.push(`Failed to add device ${id}: ${error.message}`);
+      errors.push(`Failed to add device ${DeviceId}: ${error.message}`);
     }
   }
 
-  // Construct a response based on success or errors
-  const responseMessage =
-    errors.length > 0
-      ? { message: "Some devices could not be added", errors }
-      : { message: "Devices added successfully", addedDevices: deviceIds };
-
-  // Send response with appropriate status code
-  res.status(errors.length > 0 ? 207 : 201).json(responseMessage);
+  // Always return both arrays, regardless of success or failure
+  res.status(errors.length > 0 ? 207 : 201).json({
+    addedDevices,
+    errors,
+    message:
+      errors.length > 0
+        ? addedDevices.length > 0
+          ? "Partial success"
+          : "Failed to add devices"
+        : "All devices added successfully",
+  });
 });
 
 // Endpoint to get all added devices
@@ -131,7 +127,7 @@ app.post("/api/initiate-update", async (req, res) => {
   // Update devices with the new firmware, overwriting pending updates if they exist
   await Device.updateMany(
     { deviceId: { $in: deviceIds } },
-    { $set: { pendingUpdate: true, targetFirmwareName: firmwareName } }
+    { $set: { pendingUpdate: true, targetFirmwareName: firmwareName } },
   );
 
   res.json({ message: "Update initiated for selected devices" });
@@ -160,7 +156,7 @@ app.get("/api/check-for-update/:deviceId", async (req, res) => {
     // Send the firmware file
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=${firmware.name}`
+      `attachment; filename=${firmware.name}`,
     );
     res.setHeader("Content-Type", "application/octet-stream");
     return res.send(firmware.file);
