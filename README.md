@@ -1,5 +1,3 @@
----
-
 # FOTA API Documentation
 
 This API is used for managing devices and firmware in an IoT environment. It allows clients to add devices, fetch device lists, initiate firmware updates, check for available updates, and retrieve firmware records.
@@ -53,7 +51,7 @@ http://localhost:7070
 
 
 
----
+
 
 ### 2. Retrieve All Devices
 
@@ -88,7 +86,7 @@ http://localhost:7070
     }
     ```
 
----
+
 
 ### 3. Initiate Update for Selected Devices
 
@@ -128,7 +126,7 @@ http://localhost:7070
 
 #### Example Request (cURL)
 
----
+
 
 ### 4. Check for Updates for a Device
 
@@ -162,7 +160,6 @@ http://localhost:7070
     }
     ```
 
----
 
 ### 5. Retrieve All Firmware Records
 
@@ -190,7 +187,7 @@ http://localhost:7070
     }
     ```
 
----
+
 
 ## Error Codes
 
@@ -199,7 +196,7 @@ http://localhost:7070
 - **500** - Internal Server Error: Unexpected server error occurred.
 - **207** - Multi-Status: Partial success when some devices are added successfully, while others fail.
 
----
+
 
 ## Additional Notes
 
