@@ -239,6 +239,32 @@ app.get("/api/firmwares", async (req, res) => {
   }
 });
 
+// ! JUST FOR TESTING PURPOSES
+app.get("/api/get-update", async (req, res) => {
+  try {
+    // Fetch the latest firmware from the database (or specify by name if needed)
+    const firmware = await Firmware.findOne({
+      /* You can add conditions if needed */
+    });
+
+    if (!firmware) {
+      return res.status(404).json({ error: "Firmware not found" });
+    }
+
+    // Set headers to prompt file download
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=${firmware.name}`
+    );
+    res.setHeader("Content-Type", "application/octet-stream");
+
+    // Send the binary file data
+    res.send(firmware.file);
+  } catch (error) {
+    console.error("Error sending firmware file:", error);
+    res.status(500).json({ error: "Failed to send firmware file" });
+  }
+});
 // Start the server on port 7070
 app.listen(7070, () => {
   console.log(`App is running on port 7070`);
