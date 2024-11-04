@@ -22,6 +22,42 @@ connectToDB();
 // Middleware to parse JSON request body
 app.use(express.json());
 
+// // Endpoint for firmware upload .bin files allowed
+app.post(
+  "/api/upload-firmware",
+  upload.single("firmware"),
+  async (req, res) => {
+    const { name } = req.body;
+
+    // Validate request payload
+    if (!req.file || !name) {
+      return res
+        .status(400)
+        .json({ error: "Firmware file and name are required" });
+    }
+
+    try {
+      // Create a new firmware document in MongoDB
+      const newFirmware = new Firmware({
+        name,
+        file: req.file.buffer, // Store the binary file data
+      });
+
+      // Save firmware to database
+      await newFirmware.save();
+
+      // Respond with success message and firmware ID
+      res.json({
+        message: "Firmware uploaded successfully",
+        firmwareId: newFirmware._id,
+        name,
+      });
+    } catch (error) {
+      console.error("Error saving firmware:", error);
+      res.status(500).json({ error: "Failed to upload firmware" });
+    }
+  }
+);
 // Endpoint for devices to upload firmware
 app.post(
   "/api/upload-firmware",
