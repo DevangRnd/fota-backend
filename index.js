@@ -23,6 +23,42 @@ connectToDB();
 app.use(express.json());
 
 // Endpoint for devices to upload firmware
+app.post(
+  "/api/upload-firmware",
+  upload.single("firmware"),
+  async (req, res) => {
+    const { name } = req.body;
+
+    // Validate request payload
+    if (!req.file || !name) {
+      return res
+        .status(400)
+        .json({ error: "Firmware file and name are required" });
+    }
+
+    try {
+      // Create a new firmware document in MongoDB
+      const newFirmware = new Firmware({
+        name,
+        file: req.file.buffer, // Store the binary file data
+      });
+
+      // Save firmware to database
+      await newFirmware.save();
+
+      // Respond with success message and firmware ID
+      res.json({
+        message: "Firmware uploaded successfully",
+        firmwareId: newFirmware._id,
+        name,
+      });
+    } catch (error) {
+      console.error("Error saving firmware:", error);
+      res.status(500).json({ error: "Failed to upload firmware" });
+    }
+  }
+);
+// Endpoint for devices to upload device using excel file
 app.post("/api/add-device", upload.single("file"), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "File is required" });
@@ -57,7 +93,7 @@ app.post("/api/add-device", upload.single("file"), async (req, res) => {
 
     if (!DeviceId || !Vendor || !District || !Block || !Panchayat) {
       errors.push(
-        `Missing required fields for device ${DeviceId || "unknown"}`,
+        `Missing required fields for device ${DeviceId || "unknown"}`
       );
       continue;
     }
@@ -127,7 +163,7 @@ app.post("/api/initiate-update", async (req, res) => {
   // Update devices with the new firmware, overwriting pending updates if they exist
   await Device.updateMany(
     { deviceId: { $in: deviceIds } },
-    { $set: { pendingUpdate: true, targetFirmwareName: firmwareName } },
+    { $set: { pendingUpdate: true, targetFirmwareName: firmwareName } }
   );
 
   res.json({ message: "Update initiated for selected devices" });
@@ -156,7 +192,7 @@ app.get("/api/check-for-update/:deviceId", async (req, res) => {
     // Send the firmware file
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=${firmware.name}`,
+      `attachment; filename=${firmware.name}`
     );
     res.setHeader("Content-Type", "application/octet-stream");
     return res.send(firmware.file);
