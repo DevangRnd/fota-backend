@@ -222,7 +222,6 @@ app.get("/api/firmwares", async (req, res) => {
   }
 });
 
-// ! JUST FOR TESTING PURPOSES
 // app.get("/api/get-update", async (req, res) => {
 //   try {
 //     // Fetch the latest firmware from the database (or specify by name if needed)
