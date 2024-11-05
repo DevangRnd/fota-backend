@@ -13,7 +13,6 @@ app.use(cors());
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// Load environment variables from .env file
 configDotenv();
 
 // Connect to the database
