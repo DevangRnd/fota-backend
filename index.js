@@ -22,14 +22,12 @@ connectToDB();
 // Middleware to parse JSON request body
 app.use(express.json());
 
-// // Endpoint for firmware upload .bin files allowed
+// Endpoint to upload firmware
 app.post(
   "/api/upload-firmware",
   upload.single("firmware"),
   async (req, res) => {
     const { name } = req.body;
-
-    // Validate request payload
     if (!req.file || !name) {
       return res
         .status(400)
@@ -37,16 +35,10 @@ app.post(
     }
 
     try {
-      // Create a new firmware document in MongoDB
-      const newFirmware = new Firmware({
-        name,
-        file: req.file.buffer, // Store the binary file data
-      });
-
-      // Save firmware to database
+      // Replace any existing firmware with the new one
+      await Firmware.deleteMany({});
+      const newFirmware = new Firmware({ name, file: req.file.buffer });
       await newFirmware.save();
-
-      // Respond with success message and firmware ID
       res.json({
         message: "Firmware uploaded successfully",
         firmwareId: newFirmware._id,
@@ -58,43 +50,8 @@ app.post(
     }
   }
 );
-// Endpoint for devices to upload firmware
-app.post(
-  "/api/upload-firmware",
-  upload.single("firmware"),
-  async (req, res) => {
-    const { name } = req.body;
 
-    // Validate request payload
-    if (!req.file || !name) {
-      return res
-        .status(400)
-        .json({ error: "Firmware file and name are required" });
-    }
-
-    try {
-      // Create a new firmware document in MongoDB
-      const newFirmware = new Firmware({
-        name,
-        file: req.file.buffer, // Store the binary file data
-      });
-
-      // Save firmware to database
-      await newFirmware.save();
-
-      // Respond with success message and firmware ID
-      res.json({
-        message: "Firmware uploaded successfully",
-        firmwareId: newFirmware._id,
-        name,
-      });
-    } catch (error) {
-      console.error("Error saving firmware:", error);
-      res.status(500).json({ error: "Failed to upload firmware" });
-    }
-  }
-);
-// Endpoint for devices to upload device using excel file
+/// Endpoint for devices to upload device using excel file
 app.post("/api/add-device", upload.single("file"), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "File is required" });
@@ -209,59 +166,49 @@ app.post("/api/initiate-update", async (req, res) => {
 //GIven to IOT for checking update
 app.get("/api/check-for-update/:deviceId", async (req, res) => {
   const { deviceId } = req.params;
-
   const device = await Device.findOne({ deviceId });
-  if (!device) {
-    return res.status(404).json({ error: "Device not found" });
-  }
+  if (!device) return res.status(404).json({ error: "Device not found" });
 
-  // If the device has a pending update, get the firmware file
-  if (device.pendingUpdate) {
-    const firmware = await Firmware.findOne({
-      name: device.targetFirmwareName,
-    });
+  res.json({ updateAvailable: device.pendingUpdate || false });
+});
 
-    if (!firmware) {
-      return res.status(404).json({ error: "Firmware file not found" });
-    }
+// !FOR IOT
+// Endpoint to directly download the latest firmware
+app.get("/api/download-firmware", async (req, res) => {
+  try {
+    // Find the most recent firmware
+    const firmware = await Firmware.findOne().sort({ createdAt: -1 });
+    if (!firmware)
+      return res
+        .status(404)
+        .json({ error: "No firmware available for download" });
 
-    // Send the firmware file
+    // Set headers to force file download
     res.setHeader(
       "Content-Disposition",
       `attachment; filename=${firmware.name}`
     );
     res.setHeader("Content-Type", "application/octet-stream");
-    return res.send(firmware.file);
-  } else {
-    res.json({ updateAvailable: false });
+    res.send(firmware.file);
+  } catch (error) {
+    console.error("Error downloading firmware:", error);
+    res.status(500).json({ error: "Failed to download firmware" });
   }
 });
-
 // !FOR IOT
 // Endpoint to mark an update as completed for a specific device
 app.post("/api/update-completed/:deviceId", async (req, res) => {
   const { deviceId } = req.params;
+  const device = await Device.findOne({ deviceId });
 
-  try {
-    // Find the device to retrieve the targetFirmwareName
-    const device = await Device.findOne({ deviceId });
+  if (!device) return res.status(404).json({ error: "Device not found" });
 
-    if (!device) {
-      return res.status(404).json({ error: "Device not found" });
-    }
+  device.currentFirmware = device.targetFirmwareName;
+  device.pendingUpdate = false;
+  device.targetFirmwareName = null;
+  await device.save();
 
-    // Update the device to set currentFirmware and clear the update flags
-    device.currentFirmware = device.targetFirmwareName;
-    device.pendingUpdate = false;
-    device.targetFirmwareName = null;
-
-    await device.save();
-
-    res.json({ message: "Update completed successfully", device });
-  } catch (error) {
-    console.error("Error marking update as completed:", error);
-    res.status(500).json({ error: "Failed to mark update as completed" });
-  }
+  res.json({ message: "Update completed successfully" });
 });
 
 // Endpoint to fetch all firmware records
@@ -276,31 +223,31 @@ app.get("/api/firmwares", async (req, res) => {
 });
 
 // ! JUST FOR TESTING PURPOSES
-app.get("/api/get-update", async (req, res) => {
-  try {
-    // Fetch the latest firmware from the database (or specify by name if needed)
-    const firmware = await Firmware.findOne({
-      /* You can add conditions if needed */
-    });
+// app.get("/api/get-update", async (req, res) => {
+//   try {
+//     // Fetch the latest firmware from the database (or specify by name if needed)
+//     const firmware = await Firmware.findOne({
+//       /* You can add conditions if needed */
+//     });
 
-    if (!firmware) {
-      return res.status(404).json({ error: "Firmware not found" });
-    }
+//     if (!firmware) {
+//       return res.status(404).json({ error: "Firmware not found" });
+//     }
 
-    // Set headers to prompt file download
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=${firmware.name}`
-    );
-    res.setHeader("Content-Type", "application/octet-stream");
+//     // Set headers to prompt file download
+//     res.setHeader(
+//       "Content-Disposition",
+//       `attachment; filename=${firmware.name}`
+//     );
+//     res.setHeader("Content-Type", "application/octet-stream");
 
-    // Send the binary file data
-    res.send(firmware.file);
-  } catch (error) {
-    console.error("Error sending firmware file:", error);
-    res.status(500).json({ error: "Failed to send firmware file" });
-  }
-});
+//     // Send the binary file data
+//     res.send(firmware.file);
+//   } catch (error) {
+//     console.error("Error sending firmware file:", error);
+//     res.status(500).json({ error: "Failed to send firmware file" });
+//   }
+// });
 // Start the server on port 7070
 app.listen(7070, () => {
   console.log(`App is running on port 7070`);
