@@ -25,7 +25,6 @@ app.get("/api/test", (req, res) => {
 app.get("/api/test-route", (req, res) => {
   return res.json({ message: "Success" });
 });
-
 // Start the server
 app.listen(7070, () => {
   console.log(`App is running on port 7070`);
