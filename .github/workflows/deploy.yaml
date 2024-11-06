@@ -28,6 +28,11 @@ jobs:
     - name: Install pm2
       run: sudo npm install pm2 -g
 
+    - name: Check if directory exists
+      run: |
+        echo "Listing /root/app directory contents:"
+        ls -l /root/app
+
     - name: Fix permissions for the project folder (root user)
       run: |
         sudo chown -R root:root /root/app/fota-backend  # Use root:root for permission change
