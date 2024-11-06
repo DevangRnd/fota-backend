@@ -10,29 +10,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Setup SSH Key
-        run: |
-          mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+    - name: Setup SSH Key
+      run: |
+        mkdir -p ~/.ssh
+        echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Test SSH Connection
-        run: |
-          ssh -o StrictHostKeyChecking=no root@103.127.29.215 "echo 'SSH connection successful'"
+    - name: Test SSH Connection
+      run: |
+        ssh -o StrictHostKeyChecking=no root@103.127.29.215 "echo 'SSH connection successful'"
 
-      - name: Install pm2
-        run: npm install pm2 -g
+    - name: Install pm2
+      run: sudo npm install pm2 -g
 
-      - name: Install dependencies
-        run: npm install
-        working-directory: /root/fota-backend
+    - name: Install dependencies
+      run: sudo npm install
+      working-directory: /root/fota-backend
 
-      - name: Deploy app with pm2
-        run: |
-          cd /root/fota-backend
-          pm2 restart app || pm2 start index.js
+    - name: Deploy app with pm2
+      run: |
+        sudo cd /root/fota-backend
+        sudo pm2 restart app || sudo pm2 start index.js
