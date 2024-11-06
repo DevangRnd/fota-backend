@@ -1,0 +1,34 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches:
+      - main # This deploys on push to the 'main' branch. Change as needed.
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install SSH Key
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }} # Uses the SSH key you added as a secret
+
+      - name: Deploy to Server
+        env:
+          HOST: "103.127.29.215" # Replace with your server's IP address
+          USER: "root" # Replace with your server username, e.g., 'ubuntu' or 'root'
+          PORT: "22" # SSH port (usually 22)
+          APP_DIR: "/root/fota-backend" # Path to your app on the server
+
+        run: |
+          ssh -o StrictHostKeyChecking=no $USER@$HOST -p $PORT "
+            cd $APP_DIR &&
+            git pull origin main &&
+            npm install &&
+            pm2 restart all
+          "
