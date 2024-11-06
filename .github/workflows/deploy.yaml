@@ -1,53 +1,26 @@
 name: Deploy to Server
-
 on:
   push:
     branches:
       - main
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-
     - name: Setup SSH Key
       run: |
         mkdir -p ~/.ssh
         echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H 103.127.29.215 >> ~/.ssh/known_hosts
       env:
         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
 
-    - name: Test SSH Connection
+    - name: Deploy and Restart Application
       run: |
-        ssh -o StrictHostKeyChecking=no root@103.127.29.215 "echo 'SSH connection successful'"
-
-    - name: Install pm2
-      run: sudo npm install pm2 -g
-
-    - name: Fix permissions for the project folder
-      run: |
-        sudo chmod -R 777 /root/app  # Grant read/write/execute access to all users
-
-    - name: Check if directory exists
-      run: |
-        echo "Listing /root/app directory contents:"
-        ls -l /root/app
-
-    - name: Install dependencies
-      run: |
-        cd /root/app/fota-backend
-        npm install
-
-    - name: Stop and delete old app with pm2
-      run: |
-        pm2 stop fota-backend || true  # Stop if running
-        pm2 delete fota-backend || true # Remove from pm2's process list
-
-    - name: Restart app with pm2
-      run: |
-        cd /root/app/fota-backend
-        pm2 start index.js --name "fota-backend"  # Start the app with the same name
+        ssh root@103.127.29.215 '
+          cd /root/app/fota-backend
+          git pull origin main
+          npm install
+          pm2 restart fota-backend
+        '
