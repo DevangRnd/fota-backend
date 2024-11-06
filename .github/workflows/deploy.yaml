@@ -30,12 +30,15 @@ jobs:
 
     - name: Install dependencies
       run: |
-        cd /root/fota-backend
+        cd /root/app/fota-backend
         npm install
+
+    - name: Stop and delete old app with pm2
+      run: |
+        pm2 stop fota-backend || true  # Stop if running
+        pm2 delete fota-backend || true # Remove from pm2's process list
 
     - name: Restart app with pm2
       run: |
-        cd /root/fota-backend
-        pm2 stop fota-backend || true  # Stop if running
-        pm2 delete fota-backend || true # Remove from pm2's process list
-        pm2 start index.js --name fota-backend
+        cd /root/app/fota-backend
+        pm2 start index.js --name "fota-backend"  # Always use the same name for the app
