@@ -18,7 +18,7 @@ app.use(express.json());
 // Routes
 app.use("/api", firmwareRoutes);
 app.use("/api", deviceRoutes);
-app.use("/api", authRoutes);
+// app.use("/api", authRoutes);
 
 // Start the server
 app.listen(7070, () => {
