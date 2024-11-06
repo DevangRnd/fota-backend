@@ -28,6 +28,10 @@ jobs:
     - name: Install pm2
       run: sudo npm install pm2 -g
 
+    - name: Fix permissions for the project folder (root user)
+      run: |
+        sudo chown -R root:root /root/app/fota-backend  # Use root:root for permission change
+
     - name: Install dependencies
       run: |
         cd /root/app/fota-backend
@@ -41,4 +45,4 @@ jobs:
     - name: Restart app with pm2
       run: |
         cd /root/app/fota-backend
-        pm2 start index.js --name "fota-backend"  # Always use the same name for the app
+        pm2 start index.js --name "fota-backend"  # Start the app with the same name
