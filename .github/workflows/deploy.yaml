@@ -16,11 +16,31 @@ jobs:
       env:
         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
 
-    - name: Deploy and Restart Application
+    - name: Setup Node.js and Deploy
       run: |
         ssh root@103.127.29.215 '
+          # Install nvm if not present
+          if [ ! -d "$HOME/.nvm" ]; then
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+          fi
+          
+          # Load nvm
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          
+          # Install Node.js LTS version
+          nvm install 20.11.1
+          nvm use 20.11.1
+          
+          # Install pm2 globally
+          npm install -g pm2
+          
+          # Deploy application
           cd /root/app/fota-backend
           git pull origin main
           npm install
-          pm2 restart fota-backend
+          
+          # Restart application with pm2
+          pm2 restart fota-backend || pm2 start index.js --name "fota-backend"
+          pm2 save
         '
