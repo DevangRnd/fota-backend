@@ -1,13 +1,13 @@
 import express from "express";
 import connectToDB from "./lib/connectToDB.js";
-import { configDotenv } from "dotenv";
+import dotenv from "dotenv";
 import cors from "cors";
 import firmwareRoutes from "./routes/firmwareRoutes.js";
 import deviceRoutes from "./routes/deviceRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 const app = express();
 app.use(cors());
-configDotenv();
+dotenv.config();
 
 // Connect to the database
 connectToDB();
