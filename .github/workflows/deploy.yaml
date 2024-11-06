@@ -28,11 +28,21 @@ jobs:
     - name: Install pm2
       run: sudo npm install pm2 -g
 
-    - name: Install dependencies
-      run: sudo npm install
-      working-directory: /root/fota-backend
-
-    - name: Deploy app with pm2
+    - name: Move project to new directory
       run: |
-        sudo cd /root/fota-backend
-        sudo pm2 restart app || sudo pm2 start index.js
+        sudo mv /root/fota-backend /home/ubuntu/fota-backend
+        sudo chown -R ubuntu:ubuntu /home/ubuntu/fota-backend
+      env:
+        USER: ubuntu
+
+    - name: Install dependencies
+      run: |
+        cd /home/ubuntu/fota-backend
+        npm install
+
+    - name: Restart app with pm2
+      run: |
+        cd /home/ubuntu/fota-backend
+        pm2 stop fota-backend || true  # Stop if running
+        pm2 delete fota-backend || true # Remove from pm2's process list
+        pm2 start index.js --name fota-backend
