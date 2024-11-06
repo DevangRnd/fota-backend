@@ -22,6 +22,9 @@ app.use("/api", authRoutes);
 app.get("/api/test", (req, res) => {
   return res.json({ message: "Success" });
 });
+app.get("/api/test-route", (req, res) => {
+  return res.json({ message: "Success" });
+});
 
 // Start the server
 app.listen(7070, () => {
