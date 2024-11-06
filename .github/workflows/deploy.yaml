@@ -3,7 +3,7 @@ name: Deploy to Server
 on:
   push:
     branches:
-      - main # Trigger deployment on push to the main branch
+      - main
 
 jobs:
   deploy:
@@ -11,23 +11,28 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
-      - name: Install SSH Key
-        uses: webfactory/ssh-agent@v0.5.3
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Deploy to Server
-        env:
-          HOST: "103.127.29.215" # Replace with your server's IP address
-          USER: "root" # Replace with your server username
-          PORT: "22" # SSH port (usually 22)
-          APP_DIR: "/root/fota-backend" # Path to your app on the server
+      - name: Setup SSH Key
         run: |
-          ssh -o StrictHostKeyChecking=no $USER@$HOST -p $PORT << 'EOF'
-            cd $APP_DIR
-            git pull origin main
-            npm install
-            pm2 restart all
-          EOF
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Test SSH Connection
+        run: |
+          ssh -o StrictHostKeyChecking=no root@103.127.29.215 "echo 'SSH connection successful'"
+
+      - name: Install pm2
+        run: npm install pm2 -g
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: /root/fota-backend
+
+      - name: Deploy app with pm2
+        run: |
+          cd /root/fota-backend
+          pm2 restart app || pm2 start index.js
