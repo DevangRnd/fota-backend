@@ -99,7 +99,7 @@ export const initiateUpdate = async (req, res) => {
 
   await Device.updateMany(
     { deviceId: { $in: deviceIds } },
-    { $set: { pendingUpdate: true, targetFirmwareName: firmwareName } }
+    { $set: { pendingUpdate: true, firmwareName } }
   );
 
   res.json({ message: "Update initiated for selected devices" });
@@ -119,9 +119,7 @@ export const markUpdateCompleted = async (req, res) => {
 
   if (!device) return res.status(404).json({ error: "Device not found" });
 
-  device.currentFirmware = device.targetFirmwareName;
   device.pendingUpdate = false;
-  device.targetFirmwareName = null;
   await device.save();
 
   res.json({ message: "Update completed successfully" });

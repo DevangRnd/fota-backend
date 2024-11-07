@@ -6,17 +6,13 @@ const DeviceSchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
-  currentFirmware: {
+  firmwareName: {
     type: String,
-    default: null, // Default to null until a new firmware is added
+    default: null, // Store the firmware name in a single field
   },
   pendingUpdate: {
     type: Boolean,
     default: false, // Default to false
-  },
-  targetFirmwareName: {
-    type: String,
-    default: null, // Default to null until set
   },
   vendor: {
     type: String,
@@ -35,6 +31,17 @@ const DeviceSchema = new mongoose.Schema({
     required: true,
   },
 });
+
+// Virtual field for updateStatus
+DeviceSchema.virtual("updateStatus").get(function () {
+  return this.pendingUpdate
+    ? `Pending (${this.firmwareName})`
+    : `Completed (${this.firmwareName || "None"})`;
+});
+
+// Ensure virtual fields are serialized
+DeviceSchema.set("toJSON", { virtuals: true });
+DeviceSchema.set("toObject", { virtuals: true });
 
 const Device = mongoose.model("Device", DeviceSchema);
 export default Device;
