@@ -33,10 +33,17 @@ const DeviceSchema = new mongoose.Schema({
 });
 
 // Virtual field for updateStatus
+// DeviceSchema.virtual("updateStatus").get(function () {
+//   return this.pendingUpdate
+//     ? `Pending (${this.firmwareName})`
+//     : `Completed (${this.firmwareName || "None"})`;
+// });
 DeviceSchema.virtual("updateStatus").get(function () {
   return this.pendingUpdate
     ? `Pending (${this.firmwareName})`
-    : `Completed (${this.firmwareName || "None"})`;
+    : this.firmwareName
+    ? `Completed (${this.firmwareName})`
+    : `Null`;
 });
 
 // Ensure virtual fields are serialized
