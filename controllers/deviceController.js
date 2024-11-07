@@ -1,6 +1,6 @@
 import Device from "../models/DeviceModel.js";
 import xlsx from "xlsx";
-
+import Firmware from "../models/FirmwareModel.js";
 export const addDevices = async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "File is required" });
