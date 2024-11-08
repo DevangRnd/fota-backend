@@ -1,42 +1,46 @@
-name: Deploy Vite React App to Server
-
+name: Deploy to Server
 on:
   push:
     branches:
-      - main  # Trigger on pushes to the main branch
-
+      - main
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      # Checkout the repository code
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: Setup SSH Key
+      run: |
+        mkdir -p ~/.ssh
+        echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H 103.127.29.215 >> ~/.ssh/known_hosts
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      # Set up SSH for server access
-      - name: Set up SSH
-        uses: webfactory/ssh-agent@v0.5.3
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      # Set up Node.js environment
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '16'  # Specify the Node.js version you need
-
-      # Install dependencies
-      - name: Install dependencies
-        run: |
+    - name: Setup Node.js and Deploy
+      run: |
+        ssh root@103.127.29.215 '
+          # Install nvm if not present
+          if [ ! -d "$HOME/.nvm" ]; then
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+          fi
+          
+          # Load nvm
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          
+          # Install Node.js LTS version
+          nvm install 20.11.1
+          nvm use 20.11.1
+          
+          # Install pm2 globally
+          npm install -g pm2
+          
+          # Deploy application
+          cd /root/app/fota-backend
+          git pull origin main
           npm install
-
-      # Build the React app using Vite
-      - name: Build app
-        run: |
-          npm run build
-
-      # Deploy to the server
-      - name: Deploy to server
-        run: |
-          ssh root@103.209.145.218 "cd /var/www/my-app && git pull && npm install && npm run build && rm -rf /var/www/my-app/dist/* && cp -r /var/www/my-app/build/* /var/www/my-app/dist/"
+          
+          # Restart application with pm2
+          pm2 restart fota-backend || pm2 start index.js --name "fota-backend"
+          pm2 save
+        '
