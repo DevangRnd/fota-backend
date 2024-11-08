@@ -38,7 +38,7 @@ const DeviceSchema = new mongoose.Schema({
 //     ? `Pending (${this.firmwareName})`
 //     : `Completed (${this.firmwareName || "None"})`;
 // });
-DeviceSchema.virtual("updateStatus").get(function () {
+DeviceSchema.virtual("firmwareStatus").get(function () {
   return this.pendingUpdate
     ? `Pending (${this.firmwareName})`
     : this.firmwareName

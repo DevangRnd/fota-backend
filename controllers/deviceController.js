@@ -116,11 +116,16 @@ export const checkForUpdate = async (req, res) => {
 export const markUpdateCompleted = async (req, res) => {
   const { deviceId } = req.params;
   const device = await Device.findOne({ deviceId });
+  if (!device) {
+    return res.status(404).json({ error: "Device not found" });
+  } else {
+    if (device.pendingUpdate) {
+      device.pendingUpdate = false;
+      await device.save();
 
-  if (!device) return res.status(404).json({ error: "Device not found" });
-
-  device.pendingUpdate = false;
-  await device.save();
-
-  res.json({ message: "Update completed successfully" });
+      return res.json({ message: "Update completed successfully" });
+    } else {
+      return res.json({ message: "Could not mark update completed" });
+    }
+  }
 };
