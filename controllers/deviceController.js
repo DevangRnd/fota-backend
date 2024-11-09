@@ -122,7 +122,6 @@ export const markUpdateCompleted = async (req, res) => {
     if (device.pendingUpdate) {
       device.pendingUpdate = false;
       await device.save();
-
       return res.json({ message: "Update completed successfully" });
     } else {
       return res.json({ message: "Could not mark update completed" });
