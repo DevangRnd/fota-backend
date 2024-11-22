@@ -25,7 +25,7 @@ export const uploadFirmware = async (req, res) => {
 
 export const getAllFirmwares = async (req, res) => {
   try {
-    const allFirmwares = await Firmware.find({}, "name _id");
+    const allFirmwares = await Firmware.find({});
     res.json({ allFirmwares });
   } catch (error) {
     console.error("Error retrieving firmwares:", error);

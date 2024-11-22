@@ -32,12 +32,6 @@ const DeviceSchema = new mongoose.Schema({
   },
 });
 
-// Virtual field for updateStatus
-// DeviceSchema.virtual("updateStatus").get(function () {
-//   return this.pendingUpdate
-//     ? `Pending (${this.firmwareName})`
-//     : `Completed (${this.firmwareName || "None"})`;
-// });
 DeviceSchema.virtual("firmwareStatus").get(function () {
   return this.pendingUpdate
     ? `Pending (${this.firmwareName})`
