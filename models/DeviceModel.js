@@ -10,6 +10,10 @@ const DeviceSchema = new mongoose.Schema({
     type: String,
     default: null, // Store the firmware name in a single field
   },
+  signalStrength: {
+    type: Number,
+    default: null,
+  },
   pendingUpdate: {
     type: Boolean,
     default: false, // Default to false

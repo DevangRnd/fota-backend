@@ -107,8 +107,13 @@ export const initiateUpdate = async (req, res) => {
 
 export const checkForUpdate = async (req, res) => {
   const { deviceId } = req.params;
+  const { signalStrength } = req.query;
   const device = await Device.findOne({ deviceId });
   if (!device) return res.status(404).json({ error: "Device not found" });
+  if (signalStrength) {
+    device.signalStrength = parseInt(signalStrength, 10);
+    await device.save();
+  }
 
   res.json({ updateAvailable: device.pendingUpdate || false });
 };
