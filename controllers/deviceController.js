@@ -110,6 +110,7 @@ export const checkForUpdate = async (req, res) => {
   const { signalStrength } = req.query;
   const device = await Device.findOne({ deviceId });
   if (!device) return res.status(404).json({ error: "Device not found" });
+  device.lastUpdated = new Date();
   if (signalStrength) {
     device.signalStrength = parseInt(signalStrength, 10);
     await device.save();

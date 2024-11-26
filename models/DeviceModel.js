@@ -34,6 +34,10 @@ const DeviceSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  lastUpdated: {
+    type: Date,
+    default: null,
+  },
 });
 
 DeviceSchema.virtual("firmwareStatus").get(function () {
