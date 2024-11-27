@@ -113,8 +113,8 @@ export const checkForUpdate = async (req, res) => {
   device.lastUpdated = new Date();
   if (signalStrength) {
     device.signalStrength = parseInt(signalStrength, 10);
-    await device.save();
   }
+  await device.save();
 
   res.json({ updateAvailable: device.pendingUpdate || false });
 };
