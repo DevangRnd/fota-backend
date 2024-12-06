@@ -7,6 +7,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v4
+    
     - name: Setup SSH Key
       run: |
         mkdir -p ~/.ssh
@@ -15,32 +17,36 @@ jobs:
         ssh-keyscan -H 103.127.29.215 >> ~/.ssh/known_hosts
       env:
         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-
-    - name: Setup Node.js and Deploy
+    
+    - name: Deploy to Server
       run: |
         ssh root@103.127.29.215 '
-          # Install nvm if not present
-          if [ ! -d "$HOME/.nvm" ]; then
-            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-          fi
-          
           # Load nvm
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           
-          # Install Node.js LTS version
-          nvm install 20.11.1
+          # Ensure nvm and Node.js are set up
           nvm use 20.11.1
           
-          # Install pm2 globally
-          npm install -g pm2
-          
-          # Deploy application
+          # Go to app directory
           cd /root/app/fota-backend
+          
+          # Pull latest code
           git pull origin main
+          
+          # Create .env file with secrets
+          cat > .env << EOL
+MONGO_URI=${{ secrets.MONGO_URI }}
+JWT_SECRET=${{ secrets.JWT_SECRET }}
+EOL
+          
+          # Install dependencies
           npm install
           
           # Restart application with pm2
           pm2 restart fota-backend || pm2 start index.js --name "fota-backend"
           pm2 save
         '
+      env:
+        MONGO_URI: ${{ secrets.MONGO_URI }}
+        JWT_SECRET: ${{ secrets.JWT_SECRET }}
