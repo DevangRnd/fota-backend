@@ -36,9 +36,9 @@ jobs:
           
           # Create .env file with secrets
           cat > .env << EOL
-MONGO_URI=${{ secrets.MONGO_URI }}
-JWT_SECRET=${{ secrets.JWT_SECRET }}
-EOL
+        MONGO_URI=${{ secrets.MONGO_URI }}
+        JWT_SECRET=${{ secrets.JWT_SECRET }}
+        EOL
           
           # Install dependencies
           npm install
