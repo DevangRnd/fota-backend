@@ -1,7 +1,15 @@
 import Device from "../models/DeviceModel.js";
 import xlsx from "xlsx";
 import Firmware from "../models/FirmwareModel.js";
-export const addDevices = async (req, res) => {
+import Vendor from "../models/VendorModel.js";
+export const addDevicesForAVendor = async (req, res) => {
+  const { vendorId } = req.params;
+  const vendorExists = await Vendor.findById(vendorId);
+
+  if (!vendorExists) {
+    return res.status(404).json({ error: "Vendor Not Found" });
+  }
+
   if (!req.file) {
     return res.status(400).json({ error: "File is required" });
   }
@@ -28,11 +36,12 @@ export const addDevices = async (req, res) => {
 
   const errors = [];
   const addedDevices = [];
+  const newDeviceIds = [];
 
   for (const row of rows) {
-    const { DeviceId, Vendor, District, Block, Panchayat } = row;
+    const { DeviceId, District, Block, Panchayat } = row;
 
-    if (!DeviceId || !Vendor || !District || !Block || !Panchayat) {
+    if (!DeviceId || !District || !Block || !Panchayat) {
       errors.push(
         `Missing required fields for device ${DeviceId || "unknown"}`
       );
@@ -47,17 +56,31 @@ export const addDevices = async (req, res) => {
 
     const newDevice = new Device({
       deviceId: DeviceId,
-      vendor: Vendor,
+      vendor: vendorId,
       district: District,
       block: Block,
       panchayat: Panchayat,
     });
 
     try {
-      await newDevice.save();
+      const savedDevice = await newDevice.save();
       addedDevices.push(DeviceId);
+      newDeviceIds.push(savedDevice._id);
     } catch (error) {
       errors.push(`Failed to add device ${DeviceId}: ${error.message}`);
+    }
+  }
+
+  // Update the Vendor's devices array in bulk
+  if (newDeviceIds.length > 0) {
+    try {
+      await Vendor.findByIdAndUpdate(vendorId, {
+        $push: { devices: { $each: newDeviceIds } },
+      });
+    } catch (error) {
+      errors.push(
+        "Failed to update vendor's device list. However, devices were added."
+      );
     }
   }
 
@@ -80,6 +103,28 @@ export const getAllDevices = async (req, res) => {
   } catch (error) {
     console.error("Error retrieving devices:", error);
     res.status(500).json({ error: "Failed to retrieve devices" });
+  }
+};
+export const getDevicesByVendor = async (req, res) => {
+  const { vendorId } = req.params;
+  try {
+    // Find the vendor and populate the devices
+    const vendor = await Vendor.findById(vendorId).populate("devices");
+    if (!vendor) {
+      return res.status(404).json({ message: "Vendor not found" });
+    }
+
+    // Check if devices exist for this vendor
+    if (!vendor.devices || vendor.devices.length === 0) {
+      return res
+        .status(200)
+        .json({ message: "No devices found for this vendor" });
+    }
+
+    return res.status(200).json({ devices: vendor.devices });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to retrieve devices" });
+    console.error(error);
   }
 };
 

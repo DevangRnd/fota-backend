@@ -1,45 +1,54 @@
 import mongoose from "mongoose";
 
-const DeviceSchema = new mongoose.Schema({
-  deviceId: {
-    type: String,
-    required: true,
-    unique: true,
+const DeviceSchema = new mongoose.Schema(
+  {
+    deviceId: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    firmwareName: {
+      type: String,
+      default: null,
+    },
+    signalStrength: {
+      type: Number,
+      default: null,
+    },
+    pendingUpdate: {
+      type: Boolean,
+      default: false,
+    },
+    vendor: {
+      type: mongoose.Schema.ObjectId,
+      ref: "Vendor", // Proper reference to Vendor
+      required: true,
+    },
+    district: {
+      type: String,
+      required: true,
+    },
+    block: {
+      type: String,
+      required: true,
+    },
+    panchayat: {
+      type: String,
+      required: true,
+    },
+    lastUpdated: {
+      type: Date,
+      default: null,
+    },
+    uploadedOn: {
+      type: Date,
+      default: () => new Date(), // Proper function to ensure dynamic default
+    },
   },
-  firmwareName: {
-    type: String,
-    default: null, // Store the firmware name in a single field
-  },
-  signalStrength: {
-    type: Number,
-    default: null,
-  },
-  pendingUpdate: {
-    type: Boolean,
-    default: false, // Default to false
-  },
-  vendor: {
-    type: String,
-    required: true,
-  },
-  district: {
-    type: String,
-    required: true,
-  },
-  block: {
-    type: String,
-    required: true,
-  },
-  panchayat: {
-    type: String,
-    required: true,
-  },
-  lastUpdated: {
-    type: Date,
-    default: null,
-  },
-});
+  { timestamps: true }
+); // Adds createdAt and updatedAt fields
 
+// Virtual field
 DeviceSchema.virtual("firmwareStatus").get(function () {
   return this.pendingUpdate
     ? `Pending (${this.firmwareName})`

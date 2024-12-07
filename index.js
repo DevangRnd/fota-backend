@@ -5,6 +5,8 @@ import cors from "cors";
 import firmwareRoutes from "./routes/firmwareRoutes.js";
 import deviceRoutes from "./routes/deviceRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import projectRoutes from "./routes/projectRoutes.js";
+import vendorRoutes from "./routes/vendorRoutes.js";
 const app = express();
 app.use(cors());
 dotenv.config();
@@ -19,6 +21,8 @@ app.use(express.json());
 app.use("/api", firmwareRoutes);
 app.use("/api", deviceRoutes);
 app.use("/api", authRoutes);
+app.use("/api", projectRoutes);
+app.use("/api", vendorRoutes);
 
 // Start the server
 app.listen(7070, () => {
