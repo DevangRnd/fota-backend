@@ -26,7 +26,7 @@ export const getVendorsForAProject = async (req, res) => {
     if (!project) {
       return res.status(404).json({ message: "Project Not Found" });
     }
-    return res.status(200).json(project.vendors);
+    return res.status(200).json({vendors:project.vendors});
   } catch (error) {
     res
       .status(500)
