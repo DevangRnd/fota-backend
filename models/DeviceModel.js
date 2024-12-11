@@ -40,10 +40,6 @@ const DeviceSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
-    uploadedOn: {
-      type: Date,
-      default: () => new Date(), // Proper function to ensure dynamic default
-    },
   },
   { timestamps: true }
 ); // Adds createdAt and updatedAt fields
