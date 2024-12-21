@@ -60,11 +60,30 @@ export const loginUser = async (req, res) => {
 };
 export const logoutUser = (req, res) => {
   // Clear the token cookie
-  res.clearCookie("token", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-  });
+  try {
+    res.clearCookie("token");
+    res.status(200).json({ message: "Logged Out Successfully" });
+  } catch (error) {
+    console.error("Error Logging Out", error);
+    res.status(500).json({ message: "Unable to Log Out" });
+  }
+};
+export const checkAuth = async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) {
+      res.status(404).json({ message: "Invalid User" });
+      return;
+    }
 
-  res.status(200).json({ message: "Logged out successfully" });
+    res.status(200).json({
+      user: {
+        _id: user._id,
+        username: user.username,
+      },
+    });
+  } catch (error) {
+    console.error("Error Checking Auth", error);
+    res.status(500).json({ message: "Server Error" });
+  }
 };
